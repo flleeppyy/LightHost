@@ -69,20 +69,28 @@ IconMenu::IconMenu() : INDEX_EDIT(1000000), INDEX_BYPASS(2000000), INDEX_DELETE(
     deviceManager.initialise(256, 256, savedAudioState.get(), true);
     player.setProcessor(&graph);
     deviceManager.addAudioCallback(&player);
-    // Plugins - all
-    std::unique_ptr<XmlElement> savedPluginList(getAppProperties().getUserSettings()->getXmlValue("pluginList"));
-    if (savedPluginList != nullptr)
-        knownPluginList.recreateFromXml(*savedPluginList);
-    pluginSortMethod = KnownPluginList::sortByManufacturer;
-    knownPluginList.addChangeListener(this);
-    // Plugins - active
-    std::unique_ptr<XmlElement> savedPluginListActive(getAppProperties().getUserSettings()->getXmlValue("pluginListActive"));
-    if (savedPluginListActive != nullptr)
-        activePluginList.recreateFromXml(*savedPluginListActive);
-    loadActivePlugins();
-    activePluginList.addChangeListener(this);
-	setIcon();
-	setIconTooltip(JUCEApplication::getInstance()->getApplicationName());
+    
+    try {
+        // Plugins - all
+        std::unique_ptr<XmlElement> savedPluginList(getAppProperties().getUserSettings()->getXmlValue("pluginList"));
+        if (savedPluginList != nullptr)
+            knownPluginList.recreateFromXml(*savedPluginList);
+        pluginSortMethod = KnownPluginList::sortByManufacturer;
+        knownPluginList.addChangeListener(this);
+        
+        // Plugins - active
+        std::unique_ptr<XmlElement> savedPluginListActive(getAppProperties().getUserSettings()->getXmlValue("pluginListActive"));
+        if (savedPluginListActive != nullptr)
+            activePluginList.recreateFromXml(*savedPluginListActive);
+        
+        loadActivePlugins();
+        activePluginList.addChangeListener(this);
+    } catch (std::exception& e) {
+        DBG("Error initializing plugins: " + String(e.what()));
+    }
+    
+    setIcon();
+    setIconTooltip(JUCEApplication::getInstance()->getApplicationName());
 }
 
 IconMenu::~IconMenu()
@@ -142,6 +150,11 @@ void IconMenu::loadActivePlugins()
         PluginDescription plugin = getNextPluginOlderThanTime(pluginTime);
         String errorMessage;
         std::unique_ptr<AudioPluginInstance> instance = formatManager.createPluginInstance(plugin, graph.getSampleRate(), graph.getBlockSize(), errorMessage);
+        
+        if (instance == nullptr) {
+            continue;
+        }
+        
 		String pluginUid = getKey("state", plugin);
         String savedPluginState = getAppProperties().getUserSettings()->getValue(pluginUid);
         MemoryBlock savedPluginBinary;
@@ -179,6 +192,8 @@ PluginDescription IconMenu::getNextPluginOlderThanTime(int &time)
 	int timeStatic = time;
 	PluginDescription closest;
 	int diff = INT_MAX;
+	bool foundValidPlugin = false;
+	
 	for (int i = 0; i < activePluginList.getNumTypes(); i++)
 	{
 		PluginDescription plugin = *activePluginList.getType(i);
@@ -190,8 +205,15 @@ PluginDescription IconMenu::getNextPluginOlderThanTime(int &time)
 			diff = abs(timeStatic - pluginTime);
 			closest = plugin;
 			time = pluginTime;
+			foundValidPlugin = true;
 		}
 	}
+	
+	if (!foundValidPlugin && activePluginList.getNumTypes() > 0) {
+		closest = *activePluginList.getType(0);
+		time = INT_MAX;
+	}
+	
 	return closest;
 }
 
