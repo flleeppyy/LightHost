@@ -90,7 +90,7 @@ target_compile_definitions("${PROJECT_NAME}"
     JUCE_WASAPI=1
     JUCE_DIRECTSOUND=0
     JUCE_ALSA=0
-    JUCE_ASIO=0
+    JUCE_ASIO=1
     JUCE_QUICKTIME=0
     JUCE_USE_CAMERA=0
     JUCE_USE_CDBURNER=0
@@ -121,3 +121,4 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
    add_compile_options (-fcolor-diagnostics)
 endif ()
+
