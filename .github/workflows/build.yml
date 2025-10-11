@@ -32,14 +32,32 @@ jobs:
             os: windows-latest
 
     steps:
-      - name: Set up Clang
-        if: ${{ matrix.name != 'macOS' }}
+  # --- ШАГ: Установка зависимостей для Linux ---
+      - name: Install Linux Dependencies (JUCE/Audio)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          # Основные библиотеки для JUCE (Audio, Graphics, etc.)
+          sudo apt-get install -y libasound-dev libjack-jackd2-dev libx11-dev libxext-dev libxinerama-dev libxft-dev libxcursor-dev libcurl4-openssl-dev libfreetype6-dev libgtk-3-dev
+          
+          # ИСПРАВЛЕНИЕ: Используем пакет 4.1-dev вместо 4.0-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev 
+          
+          # Установка Ninja, если он не установлен по умолчанию
+          sudo apt-get install -y ninja-build
+          
+      # --- ШАГ: Настройка Clang (только для Windows) ---
+      # Clang часто используется на Windows для кросс-компиляции, но для Linux лучше использовать GCC.
+      - name: Set up Clang (Windows only)
+        if: runner.os == 'Windows'
         uses: egor-tensin/setup-clang@v1
 
-      - name: Set up Ninja
-        if: runner.os == 'Windows'
-        shell: bash
-        run: choco install ninja
+      # --- ШАГ: Настройка Ninja (только для Windows) ---
+      #- name: Set up Ninja (Windows only)
+       # if: runner.os == 'Windows'
+       # shell: bash
+       # run: choco install ninja
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -87,6 +105,7 @@ jobs:
           # download-artifact puts these files in their own dirs...
           # Using globs sidesteps having to pass the version around
           files: |
-            */*.exe
-            */*.zip
-            */*.dmg
+            artifacts/${{ env.PROJECT_NAME }}-Windows/*
+            artifacts/${{ env.PROJECT_NAME }}-Linux/*
+            # Добавьте сюда другие расширения, если они появятся (например, .zip, .dmg)
+
