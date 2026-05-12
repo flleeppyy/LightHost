@@ -30,6 +30,12 @@ jobs:
         include:
           - name: Windows
             os: windows-latest
+            # Windows uses Ninja and Clang (set up in the steps below)
+          
+          # --- ДОБАВЛЕНА СБОРКА ДЛЯ LINUX ---
+          - name: Linux
+            os: ubuntu-latest
+            # Linux will use the default GCC/G++ compiler
 
     steps:
   # --- ШАГ: Установка зависимостей для Linux ---
@@ -60,7 +66,7 @@ jobs:
        # run: choco install ninja
 
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -77,6 +83,7 @@ jobs:
 
       - name: CMake Configure
         shell: bash
+        # Используем Ninja для всех ОС для единообразия и скорости
         run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} .
 
       - name: CMake Build
@@ -86,9 +93,15 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PROJECT_NAME }}
-          path: "${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}"
-
+          name: ${{ env.PROJECT_NAME }}-${{ matrix.name }}
+          path: |
+            # Windows artifact path
+            ${{ env.BUILD_DIR }}\${{ env.PROJECT_NAME }}_artefacts\${{ env.BUILD_TYPE }}\**\*.exe
+            # Linux artifact path (исполняемый файл)
+            ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/${{ env.PROJECT_NAME }}
+            # В зависимости от структуры сборки, исполняемый файл может быть в другом месте, например:
+            # ${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}
+            
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
@@ -97,15 +110,16 @@ jobs:
     steps:
       - name: Get Artifacts
         uses: actions/download-artifact@v4
-
+        with:
+          # Загружаем все артефакты, собранные на предыдущем шаге
+          path: artifacts
+          
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           prerelease: true
-          # download-artifact puts these files in their own dirs...
-          # Using globs sidesteps having to pass the version around
+          # Используем глобы для поиска файлов по их имени в папках артефактов
           files: |
             artifacts/${{ env.PROJECT_NAME }}-Windows/*
             artifacts/${{ env.PROJECT_NAME }}-Linux/*
             # Добавьте сюда другие расширения, если они появятся (например, .zip, .dmg)
-
