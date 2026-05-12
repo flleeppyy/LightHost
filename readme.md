@@ -10,3 +10,13 @@ See [#1](https://github.com/rolandoislas/LightHost/issues/1)
 ### Screenshot
 
 ![Light Host 1.2](http://i.imgur.com/UF9SWfC.jpg)
+
+### Building
+
+You need CMake and MSBuild.
+
+The [VST2.4](https://archive.org/download/VST2SDK) and [ASIO](https://www.steinberg.net/developers/asiosdk-open/) SDKs are required, and must be at the following paths:
+ - VST 2.4: `C:\SDKs\vstsdk2.4
+ - ASIO: `C:\SDKs\asiosdk
+
+Run `cmake -Bbuild build` then `cmake --build build`

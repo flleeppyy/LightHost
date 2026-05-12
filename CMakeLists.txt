@@ -81,30 +81,59 @@ juce_add_binary_data(Resources
 # See https://forum.juce.com/t/loading-pytorch-model-using-binarydata/39997/2
 set_target_properties(Resources PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-target_compile_definitions("${PROJECT_NAME}"
-    PUBLIC
-    # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
-    JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
-    JUCE_USE_CURL=0     # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
-    JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_WASAPI=1
-    JUCE_DIRECTSOUND=0
-    JUCE_ALSA=0
-    JUCE_ASIO=1
-    JUCE_QUICKTIME=0
-    JUCE_USE_CAMERA=0
-    JUCE_USE_CDBURNER=0
-    JUCE_USE_CDREADER=0
-    JUCE_USE_FLAC=0
-    JUCE_USE_OGGVORBIS=0
-    JUCE_PLUGINHOST_AU=1
-    JUCE_PLUGINHOST_VST=1
-    JUCE_PLUGINHOST_VST3=1
-    
-    JUCE_DISPLAY_SPLASH_SCREEN=0
-    JUCE_REPORT_APP_USAGE=0
-    JUCE_MODAL_LOOPS_PERMITTED=1)
+if(DEFINED ENV{GITHUB_ACTIONS})
+    message(STATUS "Running in Github Actions, ASIO and VST support will NOT be included.")
+    target_compile_definitions("${PROJECT_NAME}"
+        PUBLIC
+        # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
+        JUCE_WEB_BROWSER=0 # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
+        JUCE_USE_CURL=0 # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
+        JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_WASAPI=1
+        JUCE_DIRECTSOUND=0
+        JUCE_ALSA=0
+        JUCE_ASIO=0
+        JUCE_QUICKTIME=0
+        JUCE_USE_CAMERA=0
+        JUCE_USE_CDBURNER=0
+        JUCE_USE_CDREADER=0
+        JUCE_USE_FLAC=0
+        JUCE_USE_OGGVORBIS=0
+        JUCE_PLUGINHOST_AU=0
+        JUCE_PLUGINHOST_VST=0
+        JUCE_PLUGINHOST_VST3=1
 
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+        JUCE_REPORT_APP_USAGE=0
+        JUCE_MODAL_LOOPS_PERMITTED=1)
+else()
+    message(WARNING "Running in Github Actions, ASIO and VST support will be included, assuming they are located in C:/SDKs")
+    target_include_directories("${PROJECT_NAME}" PRIVATE "C:/SDKs/asiosdk/common")
+    juce_set_vst2_sdk_path("C:/SDKs/vstsdk2.4")
+    target_compile_definitions("${PROJECT_NAME}"
+        PUBLIC
+        # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
+        JUCE_WEB_BROWSER=0 # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
+        JUCE_USE_CURL=0 # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
+        JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_WASAPI=1
+        JUCE_DIRECTSOUND=0
+        JUCE_ALSA=0
+        JUCE_ASIO=1
+        JUCE_QUICKTIME=0
+        JUCE_USE_CAMERA=0
+        JUCE_USE_CDBURNER=0
+        JUCE_USE_CDREADER=0
+        JUCE_USE_FLAC=0
+        JUCE_USE_OGGVORBIS=0
+        JUCE_PLUGINHOST_AU=0
+        JUCE_PLUGINHOST_VST=1
+        JUCE_PLUGINHOST_VST3=1
+
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+        JUCE_REPORT_APP_USAGE=0
+        JUCE_MODAL_LOOPS_PERMITTED=1)
+endif()
 target_link_libraries("${PROJECT_NAME}"
     PRIVATE
     Resources
@@ -116,9 +145,9 @@ target_link_libraries("${PROJECT_NAME}"
     juce::juce_recommended_warning_flags)
 
 # Color our warnings and errors
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-   add_compile_options (-fdiagnostics-color=always)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-   add_compile_options (-fcolor-diagnostics)
-endif ()
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-fdiagnostics-color=always)
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-fcolor-diagnostics)
+endif()
 
